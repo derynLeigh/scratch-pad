@@ -9,19 +9,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Fetches a published Google Doc containing a table of (x, character, y)
- * rows and prints the grid of characters it describes.
- *
- * Coordinate system: (0, 0) is the BOTTOM-left corner. x increases to the
- * right and y increases upwards, so rows are printed from the highest y
- * down to y = 0.
- *
- * Uses only the JDK (Java 11+); no external libraries required.
- */
 public class SecretMessage {
 
-    /** One cell of the grid. A record keeps the data model explicit. */
     record Cell(int x, int y, String character) {}
 
     private static final Pattern ROW = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
@@ -36,8 +25,6 @@ public class SecretMessage {
     public static void printSecretMessage(String url) throws Exception {
         String html = fetch(url);
         List<Cell> cells = parseCells(html);
-        // Force UTF-8 so block characters don't print as '?' on terminals
-        // whose default encoding isn't UTF-8 (common on Windows).
         PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
         out.println(render(cells));
     }
@@ -139,8 +126,6 @@ public class SecretMessage {
         int maxX = cells.stream().mapToInt(Cell::x).max().orElse(0);
         int maxY = cells.stream().mapToInt(Cell::y).max().orElse(0);
 
-        // grid[y][x]; Strings rather than chars so characters outside the
-        // Basic Multilingual Plane (surrogate pairs) still fit in one cell.
         String[][] grid = new String[maxY + 1][maxX + 1];
         for (String[] row : grid) {
             java.util.Arrays.fill(row, " ");
@@ -149,7 +134,6 @@ public class SecretMessage {
             grid[cell.y()][cell.x()] = cell.character();
         }
 
-        // y increases upwards, so print the highest row first.
         StringBuilder out = new StringBuilder();
         for (int y = maxY; y >= 0; y--) {
             out.append(String.join("", grid[y]));
